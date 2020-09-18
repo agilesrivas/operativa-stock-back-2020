@@ -1,0 +1,1 @@
+# operativa-stock-back-2020
