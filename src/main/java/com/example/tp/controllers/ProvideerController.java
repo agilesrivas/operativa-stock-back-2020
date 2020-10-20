@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
+
 @CrossOrigin
 @RestController
 @RequestMapping(value = "/provideer")
@@ -64,12 +66,12 @@ public class ProvideerController implements CrudController<Provideer> {
     }
     @GetMapping(value = "/")
     @Override
-    public ResponseEntity getById(@RequestParam("id") Long value) {
+    public ResponseEntity<Provideer> getById(@RequestParam("id") Long value) {
         ResponseEntity status=new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         try{
             if(value!=null ){
-                this.provideerService.getById(value);
-                status=new ResponseEntity(HttpStatus.OK);
+                Optional<Provideer> obj = this.provideerService.getById(value);
+                status=new ResponseEntity(obj, HttpStatus.OK);
             }
         }
         catch(Exception e){
