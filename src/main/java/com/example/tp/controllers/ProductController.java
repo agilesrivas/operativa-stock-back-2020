@@ -61,11 +61,11 @@ public class ProductController implements CrudController<Product> {
         ResponseEntity status=new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         try{
             if(value!=null && value instanceof Product){
-                Config conf=this.config.getOne((long) 1);
+                Config conf = this.config.findMaxById();
                 Product product=this.productService.create(value);
                 Q ob2=this.q_repository.getByProduct(value.getId());
-                Q model_q=null;
-                P model_p=null;
+                Q model_q = null;
+                P model_p = null;
 
                 if(product.getProvideer()!=null && product.getProvideer().getLeadtime()>0 )
                 {
