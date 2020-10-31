@@ -56,29 +56,28 @@ public class ProductController implements CrudController<Product> {
     }
     @PostMapping(value = "/create")
     @Override
-    public ResponseEntity create(@RequestBody Product value) {
+    public ResponseEntity create(@RequestBody Product product) {
 
         ResponseEntity status=new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         try{
-            if(value!=null && value instanceof Product){
-                Config conf = this.config.findMaxById();
-                Product product=this.productService.create(value);
-                Q ob2=this.q_repository.getByProduct(value.getId());
-                Q model_q = null;
-                P model_p = null;
+            if(product!=null && product instanceof Product){
+                Config conf=this.config.getOne((long) 1);
+//                Q ob2=this.q_repository.getByProduct(value.getId());
+                Q model_q=null;
+                P model_p=null;
 
                 if(product.getProvideer()!=null && product.getProvideer().getLeadtime()>0 )
                 {
-                   model_p=new P(product);
-                   model_p.setD(product.getCurrentAmount()*conf.getDiasLaborales());
+                    model_p=new P(product);
+                    model_p.setD(product.getAmount()*conf.getDiasLaborales());
                     model_p.setC(product.getCost());
-                    model_p.setDr(product.getCurrentAmount());
-                    model_p.setH((product.getAmount()*conf.getCostoMantenimiento())/100);
+                    model_p.setDr(product.getAmount());
+                    model_p.setH((product.getCurrentAmount()*conf.getCostoMantenimiento())/100);
                     model_p.setL(conf.getDiasDeCompras());
-                    model_p.setS((product.getAmount()*conf.getCostoVenta())/100);
+                    model_p.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
                     model_p.setR(model_p.getDr()*model_p.getL());
                     model_p.setT(product.getProvideer().getLeadtime());
-                    model_p.setI(product.getCurrentAmount());
+                    model_p.setI(product.getAmount());
                     model_p.setP(conf.getPorcentajeServicio());
                     model_p.setDes_d(1);
                     model_p.setDes_t_l(Math.sqrt(model_p.getT()+model_p.getL())*model_p.getDes_d());
@@ -111,20 +110,20 @@ public class ProductController implements CrudController<Product> {
 
                     }
 
-
-
+                    product.setReorder_point((int) model_p.getR());
+                    Product producto=this.productService.create(product);
                     this.p_repository.save(model_p);
-                    
+
                 }else{
                     model_q=new Q(product);
                     //demanda anul
-                    model_q.setD(product.getCurrentAmount()*conf.getDiasLaborales());
+                    model_q.setD(product.getAmount()*conf.getDiasLaborales());
                     model_q.setC(product.getCost());
-                    model_q.setDr(product.getCurrentAmount());
-                    model_q.setH((product.getAmount()*conf.getCostoMantenimiento())/100);
+                    model_q.setDr(product.getAmount());
+                    model_q.setH((product.getCurrentAmount()*conf.getCostoMantenimiento())/100);
                     model_q.setL(conf.getDiasDeCompras());
 
-                    model_q.setS((product.getAmount()*conf.getCostoVenta())/100);
+                    model_q.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
                     model_q.setR(model_q.getDr()*model_q.getL());
                     model_q.setQ(Math.sqrt((2*model_q.getD()*model_q.getS())/model_q.getH()));
                     model_q.setTC((model_q.getD()*model_q.getC())+((model_q.getD()/model_q.getQ())*model_q.getS())+((model_q.getQ()/2)*model_q.getH()));
@@ -134,7 +133,7 @@ public class ProductController implements CrudController<Product> {
                     model_q.setZ_des_l(2);
                     Normaliza normModel=this.normalization.getByZ(model_q.getE_z());
                     if(normModel !=null){
-                       model_q.setZ(normModel.getZ()); 
+                        model_q.setZ(normModel.getZ());
                     }else{
                         List<Normaliza> normalizations=this.normalization.findAll();
                         int i=0;
@@ -144,7 +143,7 @@ public class ProductController implements CrudController<Product> {
                         while((i<normalizations.size()) && (b<normalizations.size()))
                         {
 
-                        if((normalizations.get(i).getE_z()>normalizations.get(j).getE_z()) && (normalizations.get(i).getE_z()<normalizations.get(b).getE_z())){
+                            if((normalizations.get(i).getE_z()>normalizations.get(j).getE_z()) && (normalizations.get(i).getE_z()<normalizations.get(b).getE_z())){
                                 normModel=normalizations.get(i);
                                 model_q.setZ(normModel.getZ());
                             }
@@ -155,7 +154,8 @@ public class ProductController implements CrudController<Product> {
                         }
 
                     }
-                    
+                    product.setReorder_point((int) model_q.getR());
+                    Product producto=this.productService.create(product);
                     this.q_repository.save(model_q);
                 }
 
@@ -171,30 +171,30 @@ public class ProductController implements CrudController<Product> {
     }
     @PutMapping(value = "/edit")
     @Override
-    public ResponseEntity update(@RequestBody Product value)
+    public ResponseEntity update(@RequestBody Product product)
     {
         ResponseEntity status=new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         try{
-            if(value!=null && value instanceof Product){
+            if(product!=null && product instanceof Product){
                 Config conf=this.config.getOne((long) 1);
-                Q ob2=this.q_repository.getByProduct(value.getId());
-                P p_ob2=this.p_repository.getByProduct(value.getId());
+                Q ob2=this.q_repository.getByProduct(product.getId());
+                P p_ob2=this.p_repository.getByProduct(product.getId());
 
-                Product product=this.productService.update(value);
-                
-                     if(p_ob2!=null){
-                        if(product.getProvideer().getLeadtime()!=0 && product.getProvideer()!=null)
-                        {
-                        p_ob2.setD((p_ob2.getStock().getCurrentAmount()+product.getCurrentAmount())*conf.getDiasLaborales());
+                Product producto=this.productService.update(product);
+
+                if(p_ob2!=null){
+                    if(product.getProvideer().getLeadtime()!=0 && product.getProvideer()!=null)
+                    {
+                        p_ob2.setD((p_ob2.getStock().getAmount()+product.getAmount())*conf.getDiasLaborales());
                         p_ob2.setC(product.getCost());
-                        p_ob2.setDr((p_ob2.getStock().getCurrentAmount()+product.getCurrentAmount())/conf.getDiasLaborales());
-                        p_ob2.setH((product.getAmount()*conf.getCostoMantenimiento())/100);
+                        p_ob2.setDr((p_ob2.getStock().getAmount()+product.getAmount())/conf.getDiasLaborales());
+                        p_ob2.setH((product.getCurrentAmount()*conf.getCostoMantenimiento())/100);
                         p_ob2.setL(1);
-                        p_ob2.setS((product.getAmount()*conf.getCostoVenta())/100);
+                        p_ob2.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
                         p_ob2.setR(p_ob2.getDr()*p_ob2.getL());
                         p_ob2.setZ(p_ob2.getZ());
                         p_ob2.setT(product.getProvideer().getLeadtime());
-                        p_ob2.setI(product.getCurrentAmount());
+                        p_ob2.setI(product.getAmount());
                         p_ob2.setP(p_ob2.getP());
                         p_ob2.setQ(p_ob2.getDr()*(p_ob2.getT()+p_ob2.getL()) + (p_ob2.getZ()*p_ob2.getDes_t_l()) - p_ob2.getI());
                         p_ob2.setDes_t_l(Math.sqrt(p_ob2.getL()));
@@ -202,17 +202,17 @@ public class ProductController implements CrudController<Product> {
                         p_ob2.setDes_t_l(Math.sqrt(p_ob2.getT()+p_ob2.getL())*p_ob2.getDes_d());
                         p_ob2.setE_z(((p_ob2.getDr()*p_ob2.getT())*(1-p_ob2.getP())/p_ob2.getDes_t_l()));
                         this.p_repository.save(p_ob2);
-                        }
-                     }
+                    }
+                }
                 if(ob2!=null){
                     //demanda anul
-                    ob2.setD((product.getCurrentAmount()+ob2.getProduct().getCurrentAmount())*conf.getDiasLaborales());
+                    ob2.setD((product.getAmount()+ob2.getProduct().getAmount())*conf.getDiasLaborales());
                     ob2.setC(product.getCost());
-                    ob2.setDr((product.getCurrentAmount()+ob2.getProduct().getCurrentAmount())/conf.getDiasLaborales());
-                    ob2.setH((product.getAmount()*conf.getCostoMantenimiento())/100);
+                    ob2.setDr((product.getAmount()+ob2.getProduct().getAmount())/conf.getDiasLaborales());
+                    ob2.setH((product.getCurrentAmount()*conf.getCostoMantenimiento())/100);
                     ob2.setL(ob2.getL());
                     ob2.setP(ob2.getP());
-                    ob2.setS((product.getAmount()*conf.getCostoVenta())/100);
+                    ob2.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
                     ob2.setR(ob2.getDr()*ob2.getL());
                     ob2.setQ(Math.sqrt((2*ob2.getD()*ob2.getS())/ob2.getH()));
                     ob2.setTC((ob2.getD()*ob2.getC())+((ob2.getD()/ob2.getQ())*ob2.getS())+((ob2.getQ()/2)*ob2.getH()));
@@ -223,7 +223,7 @@ public class ProductController implements CrudController<Product> {
                     ob2.setZ_des_l(ob2.getZ_des_l());
                     this.q_repository.save(ob2);
                 }
-               
+
                 status=new ResponseEntity(product,HttpStatus.OK);
             }
         }
@@ -270,8 +270,8 @@ public class ProductController implements CrudController<Product> {
         ResponseEntity status=new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         try{
 
-                List<Product> obj=this.productService.all();
-                status=new ResponseEntity<List<Product>>(obj,HttpStatus.OK);
+            List<Product> obj=this.productService.all();
+            status=new ResponseEntity<List<Product>>(obj,HttpStatus.OK);
 
         }
         catch(Exception e){
