@@ -10,6 +10,7 @@ import com.example.tp.repositories.P_Repository;
 import com.example.tp.repositories.Q_Repository;
 import com.example.tp.services.ProductService;
 import com.example.tp.services.StockService;
+import org.hibernate.annotations.Cascade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -232,6 +233,8 @@ public class ProductController implements CrudController<Product> {
         }
         return status;
     }
+
+
     @DeleteMapping
     @Override
     public ResponseEntity delete(@RequestParam("id") Long value) {
