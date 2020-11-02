@@ -8,6 +8,7 @@ import com.example.tp.models.*;
 import com.example.tp.repositories.ConfigRepository;
 import com.example.tp.repositories.P_Repository;
 import com.example.tp.repositories.Q_Repository;
+import com.example.tp.repositories.SaleRepository;
 import com.example.tp.services.ProductService;
 import com.example.tp.services.StockService;
 import org.hibernate.annotations.Cascade;
@@ -34,6 +35,8 @@ public class ProductController implements CrudController<Product> {
     protected Normalization normalization;
     @Autowired
     protected ConfigRepository config;
+    @Autowired
+    protected SaleRepository saleRepository;
 
     @GetMapping(value="/all/p")
     public ResponseEntity All_P(){
@@ -181,47 +184,135 @@ public class ProductController implements CrudController<Product> {
                 Q ob2=this.q_repository.getByProduct(product.getId());
                 P p_ob2=this.p_repository.getByProduct(product.getId());
 
-                Product producto=this.productService.update(product);
+
 
                 if(p_ob2!=null){
                     if(product.getProvideer().getLeadtime()!=0 && product.getProvideer()!=null)
                     {
-                        p_ob2.setD((p_ob2.getStock().getAmount()+product.getAmount())*conf.getDiasLaborales());
+//                        p_ob2.setD((p_ob2.getStock().getAmount()+product.getAmount())*conf.getDiasLaborales());
+//                        p_ob2.setC(product.getCost());
+//                        p_ob2.setDr((p_ob2.getStock().getAmount()+product.getAmount())/conf.getDiasLaborales());
+//                        p_ob2.setH((product.getCurrentAmount()*conf.getCostoMantenimiento())/100);
+//                        p_ob2.setL(1);
+//                        p_ob2.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
+//                        p_ob2.setR(p_ob2.getDr()*p_ob2.getL());
+//                        p_ob2.setZ(p_ob2.getZ());
+//                        p_ob2.setT(product.getProvideer().getLeadtime());
+//                        p_ob2.setI(product.getAmount());
+//                        p_ob2.setP(p_ob2.getP());
+//                        p_ob2.setQ(p_ob2.getDr()*(p_ob2.getT()+p_ob2.getL()) + (p_ob2.getZ()*p_ob2.getDes_t_l()) - p_ob2.getI());
+//                        p_ob2.setDes_t_l(Math.sqrt(p_ob2.getL()));
+//                        p_ob2.setDes_d(1);
+//                        p_ob2.setDes_t_l(Math.sqrt(p_ob2.getT()+p_ob2.getL())*p_ob2.getDes_d());
+//                        p_ob2.setE_z(((p_ob2.getDr()*p_ob2.getT())*(1-p_ob2.getP())/p_ob2.getDes_t_l()));
+//                        this.p_repository.save(p_ob2);
+
+                        p_ob2.setD(product.getAmount()*conf.getDiasLaborales());
                         p_ob2.setC(product.getCost());
-                        p_ob2.setDr((p_ob2.getStock().getAmount()+product.getAmount())/conf.getDiasLaborales());
+                        p_ob2.setDr(product.getAmount());
                         p_ob2.setH((product.getCurrentAmount()*conf.getCostoMantenimiento())/100);
-                        p_ob2.setL(1);
+                        p_ob2.setL(conf.getDiasDeCompras());
                         p_ob2.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
                         p_ob2.setR(p_ob2.getDr()*p_ob2.getL());
-                        p_ob2.setZ(p_ob2.getZ());
                         p_ob2.setT(product.getProvideer().getLeadtime());
                         p_ob2.setI(product.getAmount());
-                        p_ob2.setP(p_ob2.getP());
-                        p_ob2.setQ(p_ob2.getDr()*(p_ob2.getT()+p_ob2.getL()) + (p_ob2.getZ()*p_ob2.getDes_t_l()) - p_ob2.getI());
-                        p_ob2.setDes_t_l(Math.sqrt(p_ob2.getL()));
+                        p_ob2.setP(conf.getPorcentajeServicio());
                         p_ob2.setDes_d(1);
                         p_ob2.setDes_t_l(Math.sqrt(p_ob2.getT()+p_ob2.getL())*p_ob2.getDes_d());
-                        p_ob2.setE_z(((p_ob2.getDr()*p_ob2.getT())*(1-p_ob2.getP())/p_ob2.getDes_t_l()));
+
+                        p_ob2.setE_z(((p_ob2.getDr()*p_ob2.getT())*(1-p_ob2.getP()))/p_ob2.getDes_t_l());
+                        p_ob2.setQ(p_ob2.getDr()*(p_ob2.getT()+p_ob2.getL()) + (p_ob2.getZ()*p_ob2.getDes_t_l()) - p_ob2.getI());
+                        System.out.println(p_ob2.getE_z());
+                        Normaliza normModel=this.normalization.getByZ(p_ob2.getE_z());
+                        if(normModel !=null){
+                            p_ob2.setZ(normModel.getZ());
+                            p_ob2.setZ_des_t_l(p_ob2.getZ()*p_ob2.getDes_t_l());
+                        }else{
+                            List<Normaliza> normalizations=this.normalization.findAll();
+                            int i=0;
+                            int j=1;
+                            int b=i;
+
+                            while((i<normalizations.size()) && (b<normalizations.size()))
+                            {
+
+                                if((normalizations.get(i).getE_z()>normalizations.get(j).getE_z()) && (normalizations.get(i).getE_z()<normalizations.get(b).getE_z())){
+                                    normModel=normalizations.get(i);
+                                    p_ob2.setZ(normModel.getZ());
+                                }
+                                j=i;
+                                b=i+1;
+                                i++;
+
+                            }
+
+                        }
+
+                        product.setReorder_point((int) p_ob2.getR());
+                        Product producto=this.productService.update(product);
                         this.p_repository.save(p_ob2);
+
                     }
                 }
                 if(ob2!=null){
                     //demanda anul
-                    ob2.setD((product.getAmount()+ob2.getProduct().getAmount())*conf.getDiasLaborales());
+//                    ob2.setD((product.getAmount()+ob2.getProduct().getAmount())*conf.getDiasLaborales());
+//                    ob2.setC(product.getCost());
+//                    ob2.setDr((product.getAmount()+ob2.getProduct().getAmount())/conf.getDiasLaborales());
+//                    ob2.setH((product.getCurrentAmount()*conf.getCostoMantenimiento())/100);
+//                    ob2.setL(ob2.getL());
+//                    ob2.setP(ob2.getP());
+//                    ob2.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
+//                    ob2.setR(ob2.getDr()*ob2.getL());
+//                    ob2.setQ(Math.sqrt((2*ob2.getD()*ob2.getS())/ob2.getH()));
+//                    ob2.setTC((ob2.getD()*ob2.getC())+((ob2.getD()/ob2.getQ())*ob2.getS())+((ob2.getQ()/2)*ob2.getH()));
+//                    ob2.setDes_l(Math.sqrt(ob2.getL()));
+//                    ob2.setDes_d(1);
+//                    ob2.setZ(ob2.getZ());
+//                    ob2.setE_z(((1-ob2.getP())*ob2.getQ())/ob2.getDes_l());
+//                    ob2.setZ_des_l(ob2.getZ_des_l());
+//                    this.q_repository.save(ob2);
+
+
+                    ob2.setD(product.getAmount()*conf.getDiasLaborales());
                     ob2.setC(product.getCost());
-                    ob2.setDr((product.getAmount()+ob2.getProduct().getAmount())/conf.getDiasLaborales());
+                    ob2.setDr(product.getAmount());
                     ob2.setH((product.getCurrentAmount()*conf.getCostoMantenimiento())/100);
-                    ob2.setL(ob2.getL());
-                    ob2.setP(ob2.getP());
+                    ob2.setL(conf.getDiasDeCompras());
+
                     ob2.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
                     ob2.setR(ob2.getDr()*ob2.getL());
                     ob2.setQ(Math.sqrt((2*ob2.getD()*ob2.getS())/ob2.getH()));
                     ob2.setTC((ob2.getD()*ob2.getC())+((ob2.getD()/ob2.getQ())*ob2.getS())+((ob2.getQ()/2)*ob2.getH()));
                     ob2.setDes_l(Math.sqrt(ob2.getL()));
-                    ob2.setDes_d(1);
-                    ob2.setZ(ob2.getZ());
+                    ob2.setDes_d(2);
                     ob2.setE_z(((1-ob2.getP())*ob2.getQ())/ob2.getDes_l());
-                    ob2.setZ_des_l(ob2.getZ_des_l());
+                    ob2.setZ_des_l(2);
+                    Normaliza normModel=this.normalization.getByZ(ob2.getE_z());
+                    if(normModel !=null){
+                        ob2.setZ(normModel.getZ());
+                    }else{
+                        List<Normaliza> normalizations=this.normalization.findAll();
+                        int i=0;
+                        int j=1;
+                        int b=i;
+
+                        while((i<normalizations.size()) && (b<normalizations.size()))
+                        {
+
+                            if((normalizations.get(i).getE_z()>normalizations.get(j).getE_z()) && (normalizations.get(i).getE_z()<normalizations.get(b).getE_z())){
+                                normModel=normalizations.get(i);
+                                ob2.setZ(normModel.getZ());
+                            }
+                            j=i;
+                            b=i+1;
+                            i++;
+
+                        }
+
+                    }
+                    product.setReorder_point((int) ob2.getR());
+                    Product producto=this.productService.create(product);
                     this.q_repository.save(ob2);
                 }
 
@@ -241,6 +332,24 @@ public class ProductController implements CrudController<Product> {
         ResponseEntity status=new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR);
         try{
             if(value!=null){
+
+
+                ArrayList<Sale> sales = this.saleRepository.getByProduct(value);
+                for (Sale s: sales) {
+                    this.saleRepository.delete(s);
+                }
+
+                Optional<Product> prod = this.productService.getById(value);
+                P p = this.p_repository.getByProduct(value);
+                if (p != null) {
+                    this.p_repository.delete(p);
+                }else{
+                    Q q = this.q_repository.getByProduct(value);
+                    if (q != null){
+                        this.q_repository.delete(q);
+                    }
+                }
+
                 this.productService.delete(value);
                 status=new ResponseEntity(HttpStatus.OK);
             }
