@@ -233,7 +233,15 @@ public class ProductController implements CrudController<Product> {
 //                        p_ob2.setQ(p_ob2.getDr()*(p_ob2.getT()+p_ob2.getL()) + (p_ob2.getZ()*p_ob2.getDes_t_l()) - p_ob2.getI());
                         //p_ob2.setTC((p_ob2.getD()*p_ob2.getC())+((p_ob2.getD()/p_ob2.getQ())*p_ob2.getS())+((p_ob2.getQ()/2)*p_ob2.getH()));
                         System.out.println(p_ob2.getE_z());
-                        Normaliza normModel=this.normalization.getByZ(p_ob2.getE_z());
+
+                        Double e_z = p_ob2.getE_z();
+                        System.out.println(e_z);
+                        Normaliza normModel=this.normalization.getByZ(e_z);
+                        if(normModel==null){
+                            normModel=this.normalization.getByZ2(0.083);
+                        }
+
+                       // Normaliza normModel=this.normalization.getByZ(p_ob2.getE_z());
                         if(normModel !=null){
                             p_ob2.setZ(normModel.getZ());
                             p_ob2.setZ_des_t_l(p_ob2.getZ()*p_ob2.getDes_t_l());
