@@ -21,6 +21,12 @@ public class P {
     @OneToOne(fetch = FetchType.EAGER)
     private Product stock;
 
+    @Column(name = "tc",nullable = true)
+    private double TC;  //Costo anual total
+    @Column(name = "tc_service",nullable = true)
+    private double TC_service;  //Costo anual total
+    @Column(name = "tc_production",nullable = true)
+    private double TC_production;  //Costo anual total
 
     @Column(name = "D",nullable = true)
     private double D ; //Demanda anual

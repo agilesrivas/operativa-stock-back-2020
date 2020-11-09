@@ -34,6 +34,8 @@ public class Product {
     private int currentAmount;
     @Column(name="reorder_point",nullable = false)
     private int reorder_point;
+    @Column(name = "zone", nullable = false)
+    private String zone;
 
     public Product (long id,Category category,Provideer provideer,String name,String code,double amount,double cost,int current,int reorder){
         this.id=id;

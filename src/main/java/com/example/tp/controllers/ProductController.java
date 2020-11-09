@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -81,15 +82,21 @@ public class ProductController implements CrudController<Product> {
                     model_p.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
                     model_p.setR(model_p.getDr()*model_p.getL());
                     model_p.setT(product.getProvideer().getLeadtime());
-                    model_p.setI(product.getAmount());
+                    model_p.setI(product.getCurrentAmount());
                     model_p.setP(conf.getPorcentajeServicio());
                     model_p.setDes_d(1);
                     model_p.setDes_t_l(Math.sqrt(model_p.getT()+model_p.getL())*model_p.getDes_d());
 
                     model_p.setE_z(((model_p.getDr()*model_p.getT())*(1-model_p.getP()))/model_p.getDes_t_l());
-                    model_p.setQ(model_p.getDr()*(model_p.getT()+model_p.getL()) + (model_p.getZ()*model_p.getDes_t_l()) - model_p.getI());
-                    System.out.println(model_p.getE_z());
-                    Normaliza normModel=this.normalization.getByZ(model_p.getE_z());
+
+                    Double e_z = model_p.getE_z();
+                    System.out.println(e_z);
+                    Normaliza normModel=this.normalization.getByZ(e_z);
+                    System.out.println(normModel.getZ());
+
+                    if(normModel==null){
+                        normModel=this.normalization.getByZ2(0.083);
+                    }
                     if(normModel !=null){
                         model_p.setZ(normModel.getZ());
                         model_p.setZ_des_t_l(model_p.getZ()*model_p.getDes_t_l());
@@ -114,6 +121,8 @@ public class ProductController implements CrudController<Product> {
 
                     }
 
+                    model_p.setQ(model_p.getDr()*(model_p.getT()+model_p.getL()) + (model_p.getZ()*model_p.getDes_t_l()) - model_p.getI());
+                    model_p.setTC(model_p.getD()*model_p.getC() + model_p.getD() * (model_p.getS()/model_p.getQ()) + model_p.getQ() * (model_p.getH()/2) + model_p.getZ_des_t_l()*model_p.getH());
                     product.setReorder_point((int) model_p.getR());
                     Product producto=this.productService.create(product);
                     this.p_repository.save(model_p);
@@ -215,13 +224,14 @@ public class ProductController implements CrudController<Product> {
                         p_ob2.setS((product.getCurrentAmount()*conf.getCostoVenta())/100);
                         p_ob2.setR(p_ob2.getDr()*p_ob2.getL());
                         p_ob2.setT(product.getProvideer().getLeadtime());
-                        p_ob2.setI(product.getAmount());
+                        p_ob2.setI(product.getCurrentAmount());
                         p_ob2.setP(conf.getPorcentajeServicio());
                         p_ob2.setDes_d(1);
                         p_ob2.setDes_t_l(Math.sqrt(p_ob2.getT()+p_ob2.getL())*p_ob2.getDes_d());
 
                         p_ob2.setE_z(((p_ob2.getDr()*p_ob2.getT())*(1-p_ob2.getP()))/p_ob2.getDes_t_l());
-                        p_ob2.setQ(p_ob2.getDr()*(p_ob2.getT()+p_ob2.getL()) + (p_ob2.getZ()*p_ob2.getDes_t_l()) - p_ob2.getI());
+//                        p_ob2.setQ(p_ob2.getDr()*(p_ob2.getT()+p_ob2.getL()) + (p_ob2.getZ()*p_ob2.getDes_t_l()) - p_ob2.getI());
+                        //p_ob2.setTC((p_ob2.getD()*p_ob2.getC())+((p_ob2.getD()/p_ob2.getQ())*p_ob2.getS())+((p_ob2.getQ()/2)*p_ob2.getH()));
                         System.out.println(p_ob2.getE_z());
                         Normaliza normModel=this.normalization.getByZ(p_ob2.getE_z());
                         if(normModel !=null){
@@ -248,6 +258,9 @@ public class ProductController implements CrudController<Product> {
 
                         }
 
+
+                        p_ob2.setQ(p_ob2.getDr()*(p_ob2.getT()+p_ob2.getL()) + (p_ob2.getZ()*p_ob2.getDes_t_l()) - p_ob2.getI());
+                        p_ob2.setTC(p_ob2.getD()*p_ob2.getC() + p_ob2.getD() * (p_ob2.getS()/p_ob2.getQ()) + p_ob2.getQ() * (p_ob2.getH()/2) + p_ob2.getZ_des_t_l()*p_ob2.getH());
                         product.setReorder_point((int) p_ob2.getR());
                         Product producto=this.productService.update(product);
                         this.p_repository.save(p_ob2);

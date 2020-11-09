@@ -8,6 +8,9 @@ import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface Normalization extends JpaRepository<Normaliza,Long> {
-    @Query(value="SELECT * FROM normalizaciones n WHERE n.e_z = :e_z limit 1",nativeQuery = true)
+    @Query(value="SELECT * FROM normalizaciones n WHERE n.e_z >= :e_z order by n.e_z ASC limit 1 ",nativeQuery = true)
     public Normaliza getByZ(@Param("e_z")Double e_z);
+
+    @Query(value="SELECT * FROM normalizaciones n WHERE n.e_z = :e_z order by n.e_z ASC limit 1 ",nativeQuery = true)
+    public Normaliza getByZ2(@Param("e_z")Double e_z);
 }
